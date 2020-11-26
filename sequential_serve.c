@@ -11,7 +11,7 @@
 #define PORT 8080
 char path[150] = "/home/kimberly/Documentos/operativos/Proyecto2/img/"; //cambiar
 
-int receive_image(int socket, int env);
+int receive_image(int socket);
 int main()
 {
 
@@ -44,91 +44,126 @@ int main()
     perror("Falló la conexión");
     return 1;
   }
-  int env = 0;
-  int count = 0;
-  int ciclos = 3;
-    while(count < ciclos)
-  {
-    printf("Ejecutando ciclo %d", count);
-    receive_image(newsock, env);
-    fflush(stdout);
-    env++;
-    count ++;
-  }
- close(newsock);
+
+    //int n=recv(newsock,"Verificar",10,0);
+    //printf("%d\n", n);
+    receive_image(newsock);
+
+    //close(newsock);
+    //break;
+    //fflush(stdout);
+    close(newsock);
+  
  }
  return 0;
 }
 
 
-int receive_image(int socket, int env)
+int receive_image(int socket)
 {
-  int recv_size = 0, size = 0, read_size, write_size, packet_index = 1, stat;
+  int env = 0;
+  int recv_size = 0, size = 0, read_size, write_size, packet_index = 1, stat, cyc= 0;
   char imagearray[10241];
   FILE *image;
+  
 
   //Se calcula el tamaño de la imagen
   do
   {
     stat = read(socket, &size, sizeof(int));
   } while (stat < 0);
-
+  
   char buffer[] = "Got it";
   do
   {
     stat = write(socket, &buffer, sizeof(int));
   } while (stat < 0);
 
+    //Se pasa la cantidad de ciclos
+  do
+  {
+    stat = read(socket, &cyc, sizeof(int));
+  } while (stat < 0);
+
+  char buffer2[] = "Got it";
+  do
+  {
+    stat = write(socket, &buffer2, sizeof(int));
+  } while (stat < 0);
+  
   char num2[200]; 
-  sprintf(num2,"%s%d.jpg", path, env);
-  image = fopen(num2, "w");
-
-  if (image == NULL)
-  {
-    printf("No se pudo abrir la imagen\n");
-    exit(1);
-  }
-
-  //Ciclo para recibir el archivo por paquetes
-  struct timeval timeout = {10, 0};
-  fd_set fds;
-  int buffer_fd;
-
-  while (recv_size < size)
-  {
-    FD_ZERO(&fds);
-    FD_SET(socket, &fds);
-
-    buffer_fd = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
-
-    if (buffer_fd < 0)
-      printf("Error\n");
-
-    if (buffer_fd == 0)
-      printf("Error\n");
-
-    if (buffer_fd > 0)
+  int aut =0;
+  
+  while(env<cyc){
+  //Se espera un siguiente -1
+  while(aut != -1){
+    do
     {
-      do
-      {
-        read_size = read(socket, imagearray, 10241);
-      } while (read_size < 0);
+      printf("La autorización es %d\n", aut);
+      stat = read(socket, &aut, sizeof(int));
+    } while (stat < 0);
+  }
+    char buffer3[] = "Got";
+    do
+    {
+      stat = write(socket, &buffer3, sizeof(int));
+    } while (stat < 0);
+    
 
-      //Se escriben los datos recibidos en una imagen
-      write_size = fwrite(imagearray, 1, read_size, image);
-
-      if (read_size != write_size)
-      {
-        printf("Error\n");
-      }
-
-      recv_size += read_size;
-      packet_index++;
+  if(aut == -1){
+       sprintf(num2,"%s%d.jpg", path, env);
+    image = fopen(num2, "w");
+    if (image == NULL)
+    {
+      printf("No se pudo abrir la imagen\n");
+      exit(1);
     }
+
+    //Ciclo para recibir el archivo por paquetes
+    struct timeval timeout = {10, 0};
+    fd_set fds;
+    int buffer_fd;
+
+    while (recv_size < size)
+    {
+      FD_ZERO(&fds);
+      FD_SET(socket, &fds);
+
+      buffer_fd = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
+
+      if (buffer_fd < 0)
+        printf("Error\n");
+
+      if (buffer_fd == 0)
+        printf("Error\n");
+      if (buffer_fd > 0)
+      {
+        do
+        {
+          read_size = read(socket, imagearray, 10241);
+        } while (read_size < 0);
+        
+
+        //Se escriben los datos recibidos en una imagen
+        write_size = fwrite(imagearray, 1, read_size, image);
+        if (read_size != write_size)
+        {
+          printf("Error\n");
+        }
+        recv_size += read_size;
+        printf("Tamaño leído %d\n", read_size);
+      }
+    }
+    printf("El tamaño de la imagen %d %d\n", recv_size, size);
+    recv_size = 0;
+    printf("¡Imagen recibida!\n");
+    env++;
+    fclose(image);
+
+  }
+   
   }
 
-  fclose(image);
-  printf("¡Imagen recibida!\n");
   return 1;
 }
 

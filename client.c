@@ -13,7 +13,7 @@
 //#define SERVER_IP "127.0.0.1"
 
 //cliente < ip > < puerto > < imagen > < N − threads > < N − ciclos > //pendiente threads y ciclos
-int send_image(int socket, const char *ruta); 
+int send_image(int socket, const char *ruta, int cyc); 
 int main(int argc, char *argv[])
 {
  if(argc != 6){
@@ -30,25 +30,20 @@ int main(int argc, char *argv[])
  serverAddress.sin_port=htons(atoi(argv[2]));
  connect(sock,(struct sockaddr *)&serverAddress,sizeof(serverAddress));
  
+ int ciclos = 0;
 
- while(1)
- {
-  printf("\nIngrese el nombre de la imagen:\n");
-  char msg1[30];
-  scanf("%s", msg1);
-  //printf("La imagen a enviar es: %s \n", argv[3]);
-  send_image(sock, msg1);
- }
+ send_image(sock, argv[3],atoi(argv[5]));
+ 
 
  return 0;
 }
 
-int send_image(int socket, const char *ruta)
+int send_image(int socket, const char *ruta, int cyc)
 {
   FILE *picture;
   int size, read_size, stat, packet_index;
-  char send_buffer[10240], read_buffer[256];
-  packet_index = 1;
+  char send_buffer[10240], read_buffer[256], read_buffer2[256], read_buffer3[256];;
+  
   picture = fopen(ruta, "r");
 
   if (picture == NULL)
@@ -58,28 +53,56 @@ int send_image(int socket, const char *ruta)
 
   fseek(picture, 0, SEEK_END);
   size = ftell(picture);
-  fseek(picture, 0, SEEK_SET);
+  //fseek(picture, 0, SEEK_SET);
   //printf("El tamaño de la imagen es: %i\n", size);
 
   //Primero se envía el tamaño de la imagen
-  write(socket, (void *)&size, sizeof(int));
-
-  printf("Enviando...\n");
-  do
-  { 
-    stat = read(socket, &read_buffer, 255);
-  } while (stat < 0);
-
-  //La imagen se envía por paquetes
-  while (!feof(picture))
-  {
-    read_size = fread(send_buffer, 1, sizeof(send_buffer) - 1, picture);
+  int ciclos =0;
+      write(socket, (void *)&size, sizeof(int));  
     do
-    {
-      stat = write(socket, send_buffer, read_size);
+    { 
+      stat = read(socket, &read_buffer, 255);
     } while (stat < 0);
-    packet_index++;
-    bzero(send_buffer, sizeof(send_buffer));
+    
+  //Se envía la cantidad de ciclos
+      write(socket, (void *)&cyc, sizeof(int));  
+    do
+    { 
+      stat = read(socket, &read_buffer2, 255);
+    } while (stat < 0);
+    int aut = -1;
+  while(ciclos <= cyc){
+    printf("Entrando...\n");
+      //Se envía siguiente imagen
+      write(socket, (void *)&aut, sizeof(int));  
+    do
+    { 
+      stat = read(socket, &read_buffer3, 255);
+    } while (stat < 0);
+    printf("La respuesta %s a %d\n", read_buffer3, aut);
+    //La imagen se envía por paquetes
+      packet_index = 1;
+      
+      printf("Enviando...\n");
+      rewind(picture);
+      //fseek(picture, 0, SEEK_SET);
+      //bzero(send_buffer, sizeof(send_buffer));
+      while (!feof(picture))
+      {
+        
+        read_size = fread(send_buffer, 1, sizeof(send_buffer) - 1, picture);
+        do
+        {
+          stat = write(socket, send_buffer, read_size);
+          printf("spi... %d\n", read_size);
+        } while (stat < 0);
+        packet_index++;
+        //bzero(send_buffer, sizeof(send_buffer));
+      }
+
+      ciclos++;
   }
+  fclose(picture);
+  close(socket);
   return 0;
 }
