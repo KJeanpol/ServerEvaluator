@@ -10,6 +10,7 @@ from numpy import *
 import matplotlib.pyplot as plt
 import os
 import math
+import ast
 
 
 def graficar():  
@@ -17,9 +18,11 @@ def graficar():
     while (contador<4) : 
         f = open(str(contador)+".txt", "r")
         x =(f.readline())
-        print(x)
+        lista1 = ast.literal_eval(x)
+        print(lista1[0])
         y =(f.readline())
-        plt.plot(x, y)
+        lista2 = ast.literal_eval(y)
+        plt.plot(lista1, lista2)
         contador=contador+1
         f.close()
 
