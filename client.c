@@ -1,101 +1,137 @@
 #include <stdio.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <string.h>
-#include <stdlib.h>
 #include <netinet/in.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include <string.h>
 #include <arpa/inet.h>
-#include <errno.h>
+#include <stdlib.h>
+#include <fcntl.h> 
+#include <unistd.h> 
+#include<pthread.h>
 
-//#define PORT 8080
-//#define SERVER_IP "127.0.0.1"
-
-//cliente < ip > < puerto > < imagen > < N − threads > < N − ciclos > //pendiente threads y ciclos
-int send_image(int socket, const char *ruta, int cyc);
-int main(int argc, char *argv[])
+char *ip, *img;
+int port,cyc, thr;
+void * cientThread(void *arg)
 {
+  //printf("Inicia thread\n");
+  char message[1000];
+  char buffer[1024];
+  int clientSocket;
+  struct sockaddr_in serverAddr;
+  socklen_t addr_size;
+
+  clientSocket = socket(PF_INET, SOCK_STREAM, 0);
+  serverAddr.sin_family = AF_INET;
+  serverAddr.sin_port = htons(port);
+  serverAddr.sin_addr.s_addr = inet_addr(ip);
+  memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
+  addr_size = sizeof serverAddr;
+  connect(clientSocket, (struct sockaddr *) &serverAddr, addr_size);
+
+    FILE *picture;
+    int size, read_size, stat, packet_index, ciclos=0;
+    char send_buffer[10240], read_buffer[256], read_buffer2[256];
+    picture = fopen(img, "r");
+
+    if (picture == NULL)
+    {
+        printf("Error al abrir archivo");
+    }
+
+    fseek(picture, 0, SEEK_END);
+    size = ftell(picture);
+    fclose(picture);
+    //printf("El tamaño de la imagen es %d\n", size);
+    //Enviar tamaño de imagen
+    if(read(clientSocket, buffer, 1024)  < 0)
+    {
+        printf("Fallo al recibir\n");
+    }
+    if( send(clientSocket , (void*)&size, sizeof(int),0) < 0)
+    {
+        printf("Fallo al enviar\n");
+    }
+    //printf("P1: %s\n",buffer);
+    //Enviar cantidad de ciclos
+    if(read(clientSocket, buffer, 1024)  < 0)
+    {
+        printf("Fallo al recibir\n");
+    }
+    if( send(clientSocket , (void*)&cyc, sizeof(int),0) < 0)
+    {
+        printf("Fallo al enviar\n");
+    }
+    //printf("P2: %s\n",buffer);
+    //Enviar imágenes
+    while (ciclos < cyc)
+  {
+    FILE *picture;
+    int size, read_size, packet_index;
+    char send_buffer[10240], read_buffer[256], read_buffer2[256];
+    picture = fopen(img, "r");
+
+    if (picture == NULL)
+    {
+    printf("Error al abrir archivo");
+    }
+    int stat, aut=-1;
+    char read_buffer3[256];
+    //Se envía autorización
+
+    if(read(clientSocket, buffer, 1024)  < 0)
+    {
+    printf("Fallo al recibir\n");
+    }
+    if( send(clientSocket , (void*)&aut, sizeof(int),0) < 0)
+    {
+        printf("Fallo al enviar\n");
+
+    }
+    //printf("P3: %s\n",buffer);
+
+    //La imagen se envía por paquetes
+    while (!feof(picture))
+    {
+        read_size = fread(send_buffer, 1, sizeof(send_buffer) - 1, picture);
+        do
+        {
+        stat = write(clientSocket, send_buffer, read_size);
+        } while (stat < 0);
+        bzero(send_buffer, sizeof(send_buffer));
+    }
+    //printf("Enviando...\n");
+    fclose(picture);
+    ciclos++;
+  }
+    //Finalizar
+    close(clientSocket);
+    pthread_exit(NULL);
+}
+int main(int argc, char *argv[]){
+  int i = 0;
+  pthread_t tid[51];
   if (argc != 6)
   {
     printf("ingrese los parámetros correctos");
     exit(1);
   }
-  int sock;
-  struct sockaddr_in serverAddress;
-
-  sock = socket(AF_INET, SOCK_STREAM, 0);
-  memset(&serverAddress, 0, sizeof(serverAddress));
-  serverAddress.sin_family = AF_INET;
-  serverAddress.sin_addr.s_addr = inet_addr(argv[1]);
-  serverAddress.sin_port = htons(atoi(argv[2]));
-  connect(sock, (struct sockaddr *)&serverAddress, sizeof(serverAddress));
-  send_image(sock, argv[3], atoi(argv[5]));
-  return 0;
-}
-
-int send_image(int socket, const char *ruta, int cyc)
-{
-  FILE *picture;
-  int size, read_size, stat, packet_index;
-  char send_buffer[10240], read_buffer[256], read_buffer2[256], read_buffer3[256];
-  ;
-
-  picture = fopen(ruta, "r");
-
-  if (picture == NULL)
+  ip = argv[1];
+  port = atoi(argv[2]);
+  thr = atoi(argv[4]); 
+  cyc = atoi(argv[5]);
+  img = argv[3];
+  printf("IP: %s - PUERTO: %d - IMAGEN: %s - HILOS: %d - CICLOS %d\n", ip, port,img, thr,cyc);
+  printf("Enviando archivos...\n");
+  while(i< thr)
   {
-    printf("Error al abrir archivo");
+    if( pthread_create(&tid[i], NULL, cientThread, NULL) != 0 )
+           printf("Error al crear Thread\n");
+    i++;
   }
-
-  fseek(picture, 0, SEEK_END);
-  size = ftell(picture);
-
-  //Primero se envía el tamaño de la imagen
-  int ciclos = 0, aut = -1;
-  ;
-
-  write(socket, (void *)&size, sizeof(int));
-  do
+  sleep(20);
+  i = 0;
+  while(i< thr)
   {
-    stat = read(socket, &read_buffer, 255);
-  } while (stat < 0);
-
-  //Se envía la cantidad de ciclos
-  write(socket, (void *)&cyc, sizeof(int));
-  do
-  {
-    stat = read(socket, &read_buffer2, 255);
-  } while (stat < 0);
-
-  while (ciclos <= cyc)
-  {
-    //Se envía siguiente imagen
-    write(socket, (void *)&aut, sizeof(int));
-    do
-    {
-      stat = read(socket, &read_buffer3, 255);
-    } while (stat < 0);
-    //La imagen se envía por paquetes
-    packet_index = 1;
-
-    rewind(picture);
-    //fseek(picture, 0, SEEK_SET);
-    while (!feof(picture))
-    {
-
-      read_size = fread(send_buffer, 1, sizeof(send_buffer) - 1, picture);
-      do
-      {
-        stat = write(socket, send_buffer, read_size);
-      } while (stat < 0);
-      packet_index++;
-      //bzero(send_buffer, sizeof(send_buffer));
-    }
-    printf("Enviando...\n");
-    ciclos++;
+     pthread_join(tid[i++],NULL);
   }
-  fclose(picture);
-  close(socket);
   return 0;
 }
