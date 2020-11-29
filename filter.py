@@ -4,6 +4,7 @@ from numpy import *
 import matplotlib.pyplot as plt
 import os
 import math
+import sys
 
 def sobel2D(img):
     """
@@ -51,11 +52,10 @@ def sobel2D(img):
     return (nx, ny)
 
 
-def main(imagen,tipo):
+def main(argv):
     # Image path + name
-    pth1 = imagen
-    cantidad=0
-    path, dirs, files = next(os.walk("Images"+str(tipo)))
+    pth1 = argv[0]
+    path, dirs, files = next(os.walk("Images"+str(argv[1])))
     file_count = len(files)
 
     # import image
@@ -67,14 +67,12 @@ def main(imagen,tipo):
 
     #Calculate gradient magnitudes
     gx2Dmag = np.sqrt(gx2D * gx2D)
-    gy2Dmag = np.sqrt(gy2D * gy2D)
 
     #Visualize results
     if (file_count<100):
-        plt.imsave("Images"+str(tipo)+"/"+str(file_count+1)+".png", gx2Dmag, cmap="gray")
+        plt.imsave("Images"+str(argv[1])+"/"+str(file_count+1)+".png", gx2Dmag, cmap="gray")
 
 
 
-main("1.png",1)
-main("1.png",2)
-main("1.png",3)
+if __name__ == "__main__":
+   main(sys.argv[1:])

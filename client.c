@@ -121,6 +121,7 @@ int main(int argc, char *argv[]){
   img = argv[3];
   printf("IP: %s - PUERTO: %d - IMAGEN: %s - HILOS: %d - CICLOS %d\n", ip, port,img, thr,cyc);
   printf("Enviando archivos...\n");
+
   while(i< thr)
   {
     if( pthread_create(&tid[i], NULL, cientThread, NULL) != 0 )
@@ -133,5 +134,6 @@ int main(int argc, char *argv[]){
   {
      pthread_join(tid[i++],NULL);
   }
+
   return 0;
 }
