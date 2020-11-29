@@ -128,6 +128,7 @@ int main(){
                 socketThread(newSocket, env);
                 env ++;
                 close(newSocket);
+                exit(0);
         }
     }
 
