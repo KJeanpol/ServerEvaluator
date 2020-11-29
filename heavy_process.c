@@ -13,7 +13,7 @@
 
 #define PORT 8081
 
-char path[150] = "/home/reiracm/Pictures/"; //cambiar
+char path[150] = "/home/reiracm/Pictures/";
 char client_message[2000];
 char buffer[1024];
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -26,19 +26,16 @@ void  socketThread(int newSocket, int env)
     char imagearray[10241];
     char message[9] = "Petición",num2[200];
     FILE *image;
-    //send(newSocket,buffer,13,0);
-    //Tamaño de la imagen
+
     write(newSocket, message, 13);
     read(newSocket, &size, sizeof(int));
-    //printf("Tamaño de la imagen %d\n", size);
-    //Cantidad de ciclos
+
     write(newSocket, message, 13);
     read(newSocket, &cyc, sizeof(int));
-    //printf("Cantidad de ciclos %d\n", cyc);
     while(ite<cyc){
         write(newSocket, message, 13);
         read(newSocket, &aut, sizeof(int));
-        //printf("Autorización%d %d\n",ite, aut);
+
         if (aut == -1)
         {
         sprintf(num2, "%s%d.jpg", path, name_img);
@@ -50,7 +47,6 @@ void  socketThread(int newSocket, int env)
             exit(1);
         }
 
-        //Ciclo para recibir el archivo por paquetes
         struct timeval timeout = {10, 0};
         fd_set fds;
         int buffer_fd;
@@ -74,7 +70,6 @@ void  socketThread(int newSocket, int env)
                 read_size = read(newSocket, imagearray, 10241);
             } while (read_size < 0);
 
-            //Se escriben los datos recibidos en una imagen
             write_size = fwrite(imagearray, 1, read_size, image);
             if (read_size != write_size)
             {
@@ -84,7 +79,6 @@ void  socketThread(int newSocket, int env)
             }
         }
             recv_size = 0;
-            //printf("¡Imagen recibida!\n");
             env++;
             fclose(image);
         }
@@ -107,7 +101,6 @@ int main(){
   memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
   bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
 
-  //Se agregan conexiones a una cola
   if(listen(serverSocket,50)==0)
 
     printf("[+]Listening....\n");
