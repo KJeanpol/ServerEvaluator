@@ -6,156 +6,188 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <fcntl.h> 
+#include <fcntl.h>
+#include<pthread.h>
+
 
 
 #define PORT 8080
 char path[150] = "/home/reiracm/Pictures/"; //cambiar
+char client_message[2000];
+char buffer[1024];
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+int name_img = 1;
 
-int receive_image(int socket, int env);
+void  socketThread(int newSocket, int env)
+{
+
+    int recv_size = 0, size = 0, read_size, write_size, packet_index = 1, stat, cyc = 0, aut=0, ite =0;
+    char imagearray[10241];
+    char message[9] = "Petición",num2[200];
+    FILE *image;
+    //send(newSocket,buffer,13,0);
+    //Tamaño de la imagen
+    write(newSocket, message, 13);
+    read(newSocket, &size, sizeof(int));
+    //printf("Tamaño de la imagen %d\n", size);
+    //Cantidad de ciclos
+    write(newSocket, message, 13);
+    read(newSocket, &cyc, sizeof(int));
+    //printf("Cantidad de ciclos %d\n", cyc);
+    while(ite<cyc){
+        write(newSocket, message, 13);
+        read(newSocket, &aut, sizeof(int));
+        //printf("Autorización%d %d\n",ite, aut);
+        if (aut == -1)
+        {
+        sprintf(num2, "%s%d.jpg", path, name_img);
+        name_img ++;
+        image = fopen(num2, "w");
+        if (image == NULL)
+        {
+            printf("No se pudo abrir la imagen\n");
+            exit(1);
+        }
+
+        //Ciclo para recibir el archivo por paquetes
+        struct timeval timeout = {10, 0};
+        fd_set fds;
+        int buffer_fd;
+
+        while (recv_size < size)
+        {
+            FD_ZERO(&fds);
+            FD_SET(newSocket, &fds);
+
+            buffer_fd = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
+
+            if (buffer_fd < 0)
+            printf("Error\n");
+
+            if (buffer_fd == 0)
+            printf("Error\n");
+            if (buffer_fd > 0)
+            {
+            do
+            {
+                read_size = read(newSocket, imagearray, 10241);
+            } while (read_size < 0);
+
+            //Se escriben los datos recibidos en una imagen
+            write_size = fwrite(imagearray, 1, read_size, image);
+            if (read_size != write_size)
+            {
+                printf("Error\n");
+            }
+            recv_size += read_size;
+            }
+        }
+            recv_size = 0;
+            //printf("¡Imagen recibida!\n");
+            env++;
+            fclose(image);
+        }
+        ite++;
+    }
+
+}
+
+
+/*----------------------------------------------
+---------- HEAVY PROCESS SERVER MAIN -----------
+----------------------------------------------*/
+
 
 int main(){
 
-	int sockfd, ret;
+	int serverSocket, newSocket;
 	struct sockaddr_in serverAddr;
-
-	int newSocket;
-	struct sockaddr_in newAddr;
-
+	struct sockaddr_storage serverStorage;
 	socklen_t addr_size;
+  	pid_t pid[50];
 
-	char buffer[1024];
-	pid_t childpid;
+  	//Create the socket.
 
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if(sockfd < 0){
-		printf("[-]Error in connection.\n");
-		exit(1);
-	}
-	printf("[+]Server Socket is created.\n");
+  	serverSocket = socket(PF_INET, SOCK_STREAM, 0);
 
-	memset(&serverAddr, '\0', sizeof(serverAddr));
-	serverAddr.sin_family = AF_INET;
-	serverAddr.sin_port = htons(PORT);
-	serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	// Configure settings of the server address struct
 
-	ret = bind(sockfd, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
-	if(ret < 0){
-		printf("[-]Error in binding.\n");
-		exit(1);
-	}
-	printf("[+]Bind to port %d\n", 8080);
+ 	// Address family = Internet
 
-	if(listen(sockfd, 10) == 0){
-		printf("[+]Listening....\n");
-	}else{
-		printf("[-]Error in binding.\n");
-	}
+ 	serverAddr.sin_family = AF_INET;
+
+ 	//Set port number, using htons function to use proper byte order
+
+ 	serverAddr.sin_port = htons(7799);
+
+    //Set IP address to localhost
+
+    serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+   	//Set all bits of the padding field to 0
+
+    memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
+
+ 	//Bind the address struct to the socket
+
+  	bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
+
+  	//Listen on the socket, with 40 max connection requests queued
+
+ 	if(listen(serverSocket,50)==0){
+
+ 		printf("Listening\n");
+
+ 	}
+
+    else{
+
+   		printf("Error\n");
+   		pthread_t tid[60];
+   		int i = 0;
+    }
 
 
 	while(1){
 
-		newSocket = accept(sockfd, (struct sockaddr*)&newAddr, &addr_size);
-		if(newSocket < 0){
-			exit(1);
-		}
-		printf("Connection accepted from %s:%d\n", inet_ntoa(newAddr.sin_addr), ntohs(newAddr.sin_port));
+		/*---- Accept call creates a new socket for the incoming connection ----*/
 
-		if((childpid = fork()) == 0){
-			close(sockfd);
+        addr_size = sizeof serverStorage;
 
-			while(1){
-				//recv(newSocket, buffer, 1024, 0);
-				if(strcmp(buffer, ":exit") == 0){
-					printf("Disconnected from %s:%d\n", inet_ntoa(newAddr.sin_addr), ntohs(newAddr.sin_port));
-					break;
-				}else{
-					int env = 0;
-					printf("Client: %s\n", buffer);
-					receive_image(newSocket, env);
-    				fflush(stdout);
-					send(newSocket, buffer, strlen(buffer), 0);
-					bzero(buffer, sizeof(buffer));
-					childpid = 0;
-				}
-			}
-		}
-
-	}
-
-	close(newSocket);
+        newSocket = (serverSocket, (struct sockaddr *) &serverStorage, &addr_size);
+        int pid_c = 0;
 
 
-	return 0;
-}
+        if ((pid_c = fork())==0){
 
-int receive_image(int socket, int env)
-{
-  int recv_size = 0, size = 0, read_size, write_size, packet_index = 1, stat;
-  char imagearray[10241];
-  FILE *image;
+        	socketThread(newSocket,env);
+        	env ++;
+        	close(newSocket);
+        }
 
-  //Se calcula el tamaño de la imagen
-  do
-  {
-    stat = read(socket, &size, sizeof(int));
-  } while (stat < 0);
+        else{
 
-  char buffer[] = "Got it";
-  do
-  {
-    stat = write(socket, &buffer, sizeof(int));
-  } while (stat < 0);
+        	pid[i++] = pid_c;
 
-  char num2[200]; 
-  sprintf(num2,"%s%d.jpg", path, env);
-  image = fopen(num2, "w");
+         	if( i >= 49){
 
-  if (image == NULL)
-  {
-    printf("No se pudo abrir la imagen\n");
-    exit(1);
-  }
+         		i = 0;
 
-  //Ciclo para recibir el archivo por paquetes
-  struct timeval timeout = {10, 0};
-  fd_set fds;
-  int buffer_fd;
+             	while(i < 50){
 
-  while (recv_size < size)
-  {
-    FD_ZERO(&fds);
-    FD_SET(socket, &fds);
+             		waitpid(pid[i++], NULL, 0);
 
-    buffer_fd = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
+             	}
 
-    if (buffer_fd < 0)
-      printf("Error\n");
+             i = 0;
 
-    if (buffer_fd == 0)
-      printf("Error\n");
+            }
 
-    if (buffer_fd > 0)
-    {
-      do
-      {
-        read_size = read(socket, imagearray, 10241);
-      } while (read_size < 0);
+        }
 
-      //Se escriben los datos recibidos en una imagen
-      write_size = fwrite(imagearray, 1, read_size, image);
-
-      if (read_size != write_size)
-      {
-        printf("Error\n");
-      }
-
-      recv_size += read_size;
-      packet_index++;
     }
-  }
 
-  fclose(image);
-  printf("¡Imagen recibida!\n");
-  return 1;
+  	return 0;
+
 }
+
