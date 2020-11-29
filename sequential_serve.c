@@ -230,12 +230,12 @@ int main(){
 
   if (graf2 == NULL)
   {
-      printf("No se pudo abrir la imagen\n");
+      printf("No se pudo abrir el archivo\n");
       exit(1);
   }
   if (graf3 == NULL)
   {
-      printf("No se pudo abrir la imagen\n");
+      printf("No se pudo abrir el archivo\n");
       exit(1);
   }
   fputc('[', graf2);

@@ -30,11 +30,16 @@ void * cientThread(void *arg)
     FILE *picture;
     int size, read_size, stat, packet_index, ciclos=0;
     char send_buffer[10240], read_buffer[256], read_buffer2[256];
-    picture = fopen(img, "r");
+    if(!(picture = fopen(img, "r"))){
+      printf("No existe el archivo\n");
+      close(clientSocket);
+      exit(1);
+    }
 
     if (picture == NULL)
     {
-        printf("Error al abrir archivo");
+        printf("Error al abrir archivo\n");
+        exit(1);
     }
 
     fseek(picture, 0, SEEK_END);
@@ -67,11 +72,16 @@ void * cientThread(void *arg)
     FILE *picture;
     int size, read_size, packet_index;
     char send_buffer[10240], read_buffer[256], read_buffer2[256];
-    picture = fopen(img, "r");
+     if(!(picture = fopen(img, "r"))){
+       printf("No existe el archivo\n");
+       close(clientSocket);
+       exit(1);
+    }
 
     if (picture == NULL)
     {
-    printf("Error al abrir archivo");
+    printf("Error al abrir archivo\n");
+    exit(1);
     }
     int stat, aut=-1;
     char read_buffer3[256];
