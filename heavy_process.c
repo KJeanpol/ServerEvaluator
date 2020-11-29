@@ -8,10 +8,11 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include<pthread.h>
+#include <sys/wait.h>
 
 
+#define PORT 8081
 
-#define PORT 8080
 char path[150] = "/home/reiracm/Pictures/"; //cambiar
 char client_message[2000];
 char buffer[1024];
@@ -92,102 +93,52 @@ void  socketThread(int newSocket, int env)
 
 }
 
-
-/*----------------------------------------------
----------- HEAVY PROCESS SERVER MAIN -----------
-----------------------------------------------*/
-
-
 int main(){
+  int serverSocket, newSocket;
+  struct sockaddr_in serverAddr;
+  struct sockaddr_storage serverStorage;
+  socklen_t addr_size;
+  pid_t childpid;
 
-	int serverSocket, newSocket;
-	struct sockaddr_in serverAddr;
-	struct sockaddr_storage serverStorage;
-	socklen_t addr_size;
-  	pid_t pid[50];
+  serverSocket = socket(PF_INET, SOCK_STREAM, 0); 
+  serverAddr.sin_family = AF_INET;
+  serverAddr.sin_port = htons(8083);
+  serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+  memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
+  bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
 
-  	//Create the socket.
+  //Se agregan conexiones a una cola
+  if(listen(serverSocket,50)==0)
 
-  	serverSocket = socket(PF_INET, SOCK_STREAM, 0);
+    printf("[+]Listening....\n");
 
-	// Configure settings of the server address struct
+  else
 
- 	// Address family = Internet
+    printf("Error\n");
+    int env = 0;
 
- 	serverAddr.sin_family = AF_INET;
+    if((childpid = fork()) == 0){
 
- 	//Set port number, using htons function to use proper byte order
-
- 	serverAddr.sin_port = htons(7799);
-
-    //Set IP address to localhost
-
-    serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-
-   	//Set all bits of the padding field to 0
-
-    memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
-
- 	//Bind the address struct to the socket
-
-  	bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
-
-  	//Listen on the socket, with 40 max connection requests queued
-
- 	if(listen(serverSocket,50)==0){
-
- 		printf("Listening\n");
-
- 	}
-
-    else{
-
-   		printf("Error\n");
-   		pthread_t tid[60];
-   		int i = 0;
-    }
-
-
-	while(1){
-
-		/*---- Accept call creates a new socket for the incoming connection ----*/
-
-        addr_size = sizeof serverStorage;
-
-        newSocket = (serverSocket, (struct sockaddr *) &serverStorage, &addr_size);
-        int pid_c = 0;
-
-
-        if ((pid_c = fork())==0){
-
-        	socketThread(newSocket,env);
-        	env ++;
-        	close(newSocket);
-        }
-
-        else{
-
-        	pid[i++] = pid_c;
-
-         	if( i >= 49){
-
-         		i = 0;
-
-             	while(i < 50){
-
-             		waitpid(pid[i++], NULL, 0);
-
-             	}
-
-             i = 0;
-
+        while(1){
+            printf("[+]Waiting for connections....\n");
+            addr_size = sizeof serverStorage;
+            if(newSocket = accept(serverSocket, (struct sockaddr *) &serverStorage, &addr_size))
+            {
+                puts("[+]Connection accepted.");
             }
 
+            if (newSocket < 0) 
+            {
+                perror("[+]Connection failed!");
+                exit(1);
+            }
+                socketThread(newSocket, env);
+                env ++;
+                close(newSocket);
         }
-
     }
 
-  	return 0;
+    childpid = 0;
+    return 0;
 
 }
-
