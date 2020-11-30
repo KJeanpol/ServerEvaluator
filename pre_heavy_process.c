@@ -19,7 +19,7 @@
 #define NB_PROCESSES 6
 #define PROGRAM_A "./loops"
 
-char path[150] = "/home/reiracm/Pictures/";
+char path[150] = "/home/kimberly/Documentos/operativos/Proyecto2/ServerEvaluator/imgss";
 char client_message[2000];
 char buffer[1024];
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -35,8 +35,8 @@ void  socketThread(int newSocket, int env)
     char imagearray[10241];
     char message[9] = "Petición",num2[200], ruta[400];
     FILE *image;
-    graf2 = fopen("2_2.txt", "a");
-    graf3 = fopen("2_3.txt", "a");
+    graf2 = fopen("3_2.txt", "a");
+    graf3 = fopen("3_3.txt", "a");
     if (graf2 == NULL)
     {
         printf("No se pudo abrir la imagen\n");
@@ -105,7 +105,7 @@ void  socketThread(int newSocket, int env)
             fclose(image);
             int tipo = 2;
             sprintf(ruta, "python3 filter.py %s %d\n", num2, tipo);
-            system (ruta);
+            //system (ruta);
             
         }
         ite++;
@@ -149,6 +149,7 @@ void  socketThread(int newSocket, int env)
     fclose(graf3);
 }
 int  idHijo;
+int ids[100];
 
 void catch(int sig)
 {   
@@ -157,6 +158,9 @@ void catch(int sig)
     time(&end);
     time_t elapsed = end - begin;
     printf("Tiempo total: %ld seconds.\n", elapsed);
+    for (int i = 0; i < NB_PROCESSES; ++i){
+        kill(ids[i], SIGKILL); 
+    }
     graf2 = fopen("1_2.txt", "a");
     graf3 = fopen("1_3.txt", "a");
     if (graf2 == NULL)
@@ -207,7 +211,7 @@ void catch(int sig)
         fputc(temp+48, graf1);
     }
     fclose(graf1);
-    exit(1);
+    //exit(1);
 }
 
 int main(){
@@ -225,12 +229,12 @@ int main(){
   memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
   bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
   
-  remove("2_1.txt");
-  remove("2_2.txt");
-  remove("2_3.txt");
+  remove("1_1.txt");
+  remove("3_2.txt");
+  remove("3_3.txt");
   
-  graf2 = fopen("2_2.txt", "a");
-  graf3 = fopen("2_3.txt", "a");
+  graf2 = fopen("3_2.txt", "a");
+  graf3 = fopen("3_3.txt", "a");
   if (graf2 == NULL)
   {
       printf("No se pudo abrir el archivo\n");
@@ -271,7 +275,8 @@ int main(){
                             close(newSocket);
                             sleep(NB_PROCESSES - i);
                             printf("Hello from Child %d\n",i);
-                            exit (0);
+                            ids[i]= pidChild[i]; 
+                            //exit (0);
 
                     } else {
 
