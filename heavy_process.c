@@ -58,7 +58,6 @@ void  socketThread(int newSocket, int env)
         if (aut == -1)
         {
         sprintf(num2, "%s/%d_%d.jpg", path, env, name_img);
-        //printf("NUMERO IMAGEN %d\n", env);
         name_img ++;
         image = fopen(num2, "w");
         if (image == NULL)
@@ -102,6 +101,7 @@ void  socketThread(int newSocket, int env)
             fclose(image);
             int tipo = 2;
             sprintf(ruta, "python3 filter.py %s %d\n", num2, tipo);
+            printf("RUTA IMAGEN %s\n", num2);
             system (ruta);
             
         }

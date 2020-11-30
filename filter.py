@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import os
 import math
 import sys
+import time
 
 def sobel2D(img):
     """
@@ -54,6 +55,7 @@ def sobel2D(img):
 
 def main(argv):
     # Image path + name
+    time.sleep(1)
     pth1 = argv[0]
     path, dirs, files = next(os.walk("Images"+str(argv[1])))
     file_count = len(files)
