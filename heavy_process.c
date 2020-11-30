@@ -153,8 +153,8 @@ void catch(int sig)
     time(&end);
     time_t elapsed = end - begin;
     printf("Tiempo total: %ld seconds.\n", elapsed);
-    graf2 = fopen("1_2.txt", "a");
-    graf3 = fopen("1_3.txt", "a");
+    graf2 = fopen("2_2.txt", "a");
+    graf3 = fopen("2_3.txt", "a");
     if (graf2 == NULL)
     {
         printf("No se pudo abrir la imagen\n");
@@ -169,14 +169,14 @@ void catch(int sig)
     fputc(']', graf3);
     fclose(graf2);
     fclose(graf3);
-    graf1 = fopen("2_1.txt", "a");
+    graf1 = fopen("1_1.txt", "a");
 
     if (graf1 == NULL)
     {
         printf("No se pudo abrir la imagen\n");
         exit(1);
     }
-    while(ite2>0)
+    /*while(ite2>0)
     {
         ite2=ite2/10;
         ite_cifras++;
@@ -187,7 +187,7 @@ void catch(int sig)
         ite4%=ite_cifras;
         ite_cifras/=10;
         fputc(temp+48, graf1);
-    }
+    }*/
     fputc(',', graf1);
     elapsed2 = elapsed;
     while(elapsed2>0)
@@ -216,8 +216,8 @@ int main(){
 
   serverSocket = socket(PF_INET, SOCK_STREAM, 0); 
   serverAddr.sin_family = AF_INET;
-  serverAddr.sin_port = htons(8083);
-  serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+  serverAddr.sin_port = htons(8081);
+  serverAddr.sin_addr.s_addr = inet_addr("127.0.0.2");
   memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
   bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
   
