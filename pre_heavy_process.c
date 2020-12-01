@@ -19,7 +19,7 @@
 #define NB_PROCESSES 6
 #define PROGRAM_A "./loops"
 
-char path[150] = "/home/kimberly/Documentos/operativos/Proyecto2/ServerEvaluator/imgss";
+char path[150] = "/home/reiracm/Pictures/";
 char client_message[2000];
 char buffer[1024];
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -28,23 +28,23 @@ time_t begin, end, begin_unit, end_unit;
 long acum=0;
 FILE *graf1, *graf2, *graf3;
 
-void  socketThread(int newSocket, int env)
+void  socketThread(int newSocket, int env, int processC, int processP)
 {
 
     int recv_size = 0, size = 0, read_size, write_size, packet_index = 1, stat, cyc = 0, aut=0, ite =0;
     char imagearray[10241];
     char message[9] = "Petición",num2[200], ruta[400];
     FILE *image;
-    graf2 = fopen("3_2.txt", "a");
-    graf3 = fopen("3_3.txt", "a");
+    graf2 = fopen("2_2.txt", "a");
+    graf3 = fopen("2_3.txt", "a");
     if (graf2 == NULL)
     {
-        printf("No se pudo abrir la imagen\n");
+        printf("Could not open image\n");
         exit(1);
     }
     if (graf3 == NULL)
     {
-        printf("No se pudo abrir la imagen\n");
+        printf("Could not open image\n");
         exit(1);
     }
     write(newSocket, message, 13);
@@ -60,13 +60,12 @@ void  socketThread(int newSocket, int env)
 
         if (aut == -1)
         {
-        sprintf(num2, "%s/%d_%d.jpg", path, env, name_img);
-        printf("NUMERO IMAGEN %d %d\n", env,name_img);
+        sprintf(num2, "%s/%d_%d_%d_%d.jpg", path, env, processC, processP,name_img);
         name_img ++;
         image = fopen(num2, "w");
         if (image == NULL)
         {
-            printf("No se pudo abrir la imagen\n");
+            printf("Could not open image\n");
             exit(1);
         }
 
@@ -105,7 +104,7 @@ void  socketThread(int newSocket, int env)
             fclose(image);
             int tipo = 2;
             sprintf(ruta, "python3 filter.py %s %d\n", num2, tipo);
-            //system (ruta);
+            system (ruta);
             
         }
         ite++;
@@ -149,7 +148,6 @@ void  socketThread(int newSocket, int env)
     fclose(graf3);
 }
 int  idHijo;
-int ids[100];
 
 void catch(int sig)
 {   
@@ -157,20 +155,17 @@ void catch(int sig)
     int ite_cifras=0, ite2=ite4, temp=0, elapsed2, elapsed_cifras=0;
     time(&end);
     time_t elapsed = end - begin;
-    printf("Tiempo total: %ld seconds.\n", elapsed);
-    for (int i = 0; i < NB_PROCESSES; ++i){
-        kill(ids[i], SIGKILL); 
-    }
+    printf("Time: %ld seconds.\n", elapsed);
     graf2 = fopen("1_2.txt", "a");
     graf3 = fopen("1_3.txt", "a");
     if (graf2 == NULL)
     {
-        printf("No se pudo abrir la imagen\n");
+        printf("Could not open image\n");
         exit(1);
     }
     if (graf3 == NULL)
     {
-        printf("No se pudo abrir la imagen\n");
+        printf("Could not open image\n");
         exit(1);
     }
     fputc(']', graf2);
@@ -181,7 +176,7 @@ void catch(int sig)
 
     if (graf1 == NULL)
     {
-        printf("No se pudo abrir la imagen\n");
+        printf("Could not open image\n");
         exit(1);
     }
     while(ite2>0)
@@ -211,7 +206,7 @@ void catch(int sig)
         fputc(temp+48, graf1);
     }
     fclose(graf1);
-    //exit(1);
+    exit(1);
 }
 
 int main(){
@@ -229,20 +224,20 @@ int main(){
   memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
   bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
   
-  remove("1_1.txt");
-  remove("3_2.txt");
-  remove("3_3.txt");
+  remove("2_1.txt");
+  remove("2_2.txt");
+  remove("2_3.txt");
   
-  graf2 = fopen("3_2.txt", "a");
-  graf3 = fopen("3_3.txt", "a");
+  graf2 = fopen("2_2.txt", "a");
+  graf3 = fopen("2_3.txt", "a");
   if (graf2 == NULL)
   {
-      printf("No se pudo abrir el archivo\n");
+      printf("Could not open file\n");
       exit(1);
   }
   if (graf3 == NULL)
   {
-      printf("No se pudo abrir el archivo\n");
+      printf("Could not open file\n");
       exit(1);
   }
   fputc('[', graf2);
@@ -257,9 +252,7 @@ int main(){
     int env = 1;
     while(1){
 
-            pid_t pidChild[NB_PROCESSES];
-            pid_t stoppedChild;
-            int   nbChild = 0;
+
             signal(SIGINT, &catch);
             printf("[+]Waiting for connections....\n");
             addr_size = sizeof serverStorage;
@@ -268,21 +261,24 @@ int main(){
 
                 printf("[+]Connection accepted\n");
 
+                pid_t pidChild[NB_PROCESSES];
+                pid_t stoppedChild;
+                int   nbChild = 0;
+
 
                 for (int i = 0; i < NB_PROCESSES; ++i) {
                     if ((pidChild[i] = fork()) == 0) {
-                            socketThread(newSocket, env);
+                            socketThread(newSocket, env, getppid(), getpid());
                             close(newSocket);
                             sleep(NB_PROCESSES - i);
                             printf("Hello from Child %d\n",i);
-                            ids[i]= pidChild[i]; 
-                            //exit (0);
 
                     } else {
 
                         idHijo = pidChild[i];
                         //env ++;
                         ++nbChild;
+                        wait(NULL);
                         }
                     }
 
@@ -298,6 +294,5 @@ int main(){
             }       
     }
 
-    //close(childpid);
     return 0;
 }
