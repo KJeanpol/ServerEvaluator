@@ -11,7 +11,7 @@
 #include <signal.h>
 #include <math.h>
 
-char path[150] = "/home/kimberly/Documentos/operativos/Proyecto2/ServerEvaluator/img/"; //cambiar
+char path[150] = "/home/kimberly/Documentos/operativos/Proyecto2/Proyecto2img/"; //cambiar
 char client_message[2000];
 char buffer[1024];
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;

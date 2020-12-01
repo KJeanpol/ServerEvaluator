@@ -16,7 +16,7 @@
 
 #define PORT 8081
 
-char path[150] = "/home/kimberly/Documentos/operativos/Proyecto2/ServerEvaluator/imgs";
+char path[150] = "/home/kimberly/Documentos/operativos/Proyecto2/Proyecto2/imgs";
 char client_message[2000];
 char buffer[1024];
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
