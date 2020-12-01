@@ -11,7 +11,7 @@
 #include <signal.h>
 #include <math.h>
 
-char path[150] = "/home/kimberly/Documentos/operativos/Proyecto2/Proyecto2img/"; //cambiar
+char path[150] = "/home/kimberly/Documentos/operativos/Proyecto2/Proyecto2/temp/img/"; //cambiar
 char client_message[2000];
 char buffer[1024];
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -26,33 +26,26 @@ void  socketThread(int newSocket, int env)
     char imagearray[10241];
     char message[9] = "Petición",num2[200], ruta[400];
     FILE *image;
-    graf2 = fopen("1_2.txt", "a");
-    graf3 = fopen("1_3.txt", "a");
+    graf2 = fopen("1_2_1.txt", "a");
+    graf3 = fopen("1_3_1.txt", "a");
     if (graf2 == NULL)
     {
-        printf("No se pudo abrir la imagen\n");
+        printf("Could not open image\n");
         exit(1);
     }
     if (graf3 == NULL)
     {
-        printf("No se pudo abrir la imagen\n");
+        printf("Could not open image\n");
         exit(1);
     }
-    //send(newSocket,buffer,13,0);
-    //Tamaño de la imagen
     write(newSocket, message, 13);
     read(newSocket, &size, sizeof(int));
-    //printf("Tamaño de la imagen %d\n", size);
-    //Cantidad de ciclos
     write(newSocket, message, 13);
     read(newSocket, &cyc, sizeof(int));
-    //printf("Cantidad de ciclos %d\n", cyc);
     while(ite<cyc){
-        time(&begin_unit); 
-        
+        time(&begin_unit);       
         write(newSocket, message, 13);
         read(newSocket, &aut, sizeof(int));
-        //printf("Autorización%d %d\n",ite, aut);
         if (aut == -1)
         {
         sprintf(num2, "%s%d.jpg", path, name_img);
@@ -60,7 +53,7 @@ void  socketThread(int newSocket, int env)
         image = fopen(num2, "w");
         if (image == NULL)
         {
-            printf("No se pudo abrir la imagen\n");
+            printf("Could not open image\n");
             exit(1);
         }
 
@@ -103,15 +96,12 @@ void  socketThread(int newSocket, int env)
             fclose(image);
             int tipo = 1;
             sprintf(ruta, "python3 filter.py %s %d\n", num2, tipo);
-            //printf("%s", ruta);
             system (ruta);
         }
         ite++;
         time(&end_unit);
         time_t elapsed = end_unit - begin_unit;
-        //printf("Tiempo solicitud: %ld seconds.\n", elapsed);
         acum += elapsed;
-        //printf("Tiempo acumulado: %ld seconds.\n", acum);
         int elapsed_cifras=0, acum_cifras =0, elapsed2 = elapsed, acum2 = acum, acum3= acum, temp;
         while(elapsed2>0)
         {
@@ -128,14 +118,12 @@ void  socketThread(int newSocket, int env)
             temp = elapsed/elapsed_cifras;
             elapsed%=elapsed_cifras;
             elapsed_cifras/=10;
-            //printf("Escribiendo1: %d\n", temp);
             fputc(temp+48, graf2);
         }
         while(acum_cifras >0){
             temp = acum3/acum_cifras;
             acum3%=acum_cifras;
             acum_cifras/=10;
-            //printf("Escribiendo2: %d\n", temp);
             fputc(temp+48, graf3);
         }
             fputc(',', graf2);
@@ -150,32 +138,31 @@ void  socketThread(int newSocket, int env)
  
 void catch(int sig)
 {
-    //printf("Señal: %d atrapada!\n", sig);
     int ite_cifras=0, ite2=ite4, temp=0, elapsed2, elapsed_cifras=0;
     time(&end);
     time_t elapsed = end - begin;
-    printf("Tiempo total: %ld seconds.\n", elapsed);
-    graf2 = fopen("1_2.txt", "a");
-    graf3 = fopen("1_3.txt", "a");
+    //printf("Tiempo total: %ld seconds.\n", elapsed);
+    graf2 = fopen("1_2_1.txt", "a");
+    graf3 = fopen("1_3_1.txt", "a");
     if (graf2 == NULL)
     {
-        printf("No se pudo abrir la imagen\n");
+        printf("Could not open file\n");
         exit(1);
     }
     if (graf3 == NULL)
     {
-        printf("No se pudo abrir la imagen\n");
+        printf("Could not open file\n");
         exit(1);
     }
     fputc(']', graf2);
     fputc(']', graf3);
     fclose(graf2);
     fclose(graf3);
-    graf1 = fopen("1_1.txt", "a");
+    graf1 = fopen("1_1_1.txt", "a");
 
     if (graf1 == NULL)
     {
-        printf("No se pudo abrir la imagen\n");
+        printf("Could not open file\n");
         exit(1);
     }
     while(ite2>0)
@@ -221,21 +208,22 @@ int main(){
   memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
   bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
   signal(SIGINT, &catch);
-  remove("1_1.txt");
-  remove("1_2.txt");
-  remove("1_3.txt");
-  //Se agregan conexiones a una cola
-  graf2 = fopen("1_2.txt", "a");
-  graf3 = fopen("1_3.txt", "a");
+
+  remove("1_1_1.txt");
+  remove("1_2_1.txt");
+  remove("1_3_1.txt");
+
+  graf2 = fopen("1_2_1.txt", "a");
+  graf3 = fopen("1_3_1.txt", "a");
 
   if (graf2 == NULL)
   {
-      printf("No se pudo abrir el archivo\n");
+      printf("Could not open file\n");
       exit(1);
   }
   if (graf3 == NULL)
   {
-      printf("No se pudo abrir el archivo\n");
+      printf("Could not open file\n");
       exit(1);
   }
   fputc('[', graf2);
@@ -243,22 +231,22 @@ int main(){
   fclose(graf2);
   fclose(graf3);
   if(listen(serverSocket,50)==0)
-    printf("Escuchando\n");
+    printf("[+]Listening....\n");
   else
     printf("Error\n");
     int env = 0;
     while(1)
     {
-      printf("Siguiente conexion:\n");
+      printf("[+]Waiting for connections....\n");
       addr_size = sizeof serverStorage;
       if (newSocket = accept(serverSocket, (struct sockaddr *) &serverStorage, &addr_size))
       {
-        puts("Aceptada");
+        puts("[+]Connection accepted\n");
       }
 
       if (newSocket < 0)
       {
-        perror("Falló la conexión");
+        perror("[+]Connection failed!");
         exit(1);
       }
         socketThread(newSocket, env);

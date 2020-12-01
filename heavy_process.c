@@ -13,10 +13,7 @@
 #include <signal.h>
 #include <math.h>
 
-
-#define PORT 8081
-
-char path[150] = "/home/kimberly/Documentos/operativos/Proyecto2/Proyecto2/imgs";
+char path[150] = "/home/kimberly/Documentos/operativos/Proyecto2/Proyecto2/temp/imgs";
 char client_message[2000];
 char buffer[1024];
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
@@ -32,16 +29,16 @@ void  socketThread(int newSocket, int env)
     char imagearray[10241];
     char message[9] = "Petición",num2[200], ruta[400];
     FILE *image;
-    graf2 = fopen("2_2.txt", "a");
-    graf3 = fopen("2_3.txt", "a");
+    graf2 = fopen("2_2_1.txt", "a");
+    graf3 = fopen("2_3_1.txt", "a");
     if (graf2 == NULL)
     {
-        printf("No se pudo abrir la imagen\n");
+        printf("Could not open image\n");
         exit(1);
     }
     if (graf3 == NULL)
     {
-        printf("No se pudo abrir la imagen\n");
+        printf("Could not open image\n");
         exit(1);
     }
     write(newSocket, message, 13);
@@ -62,7 +59,7 @@ void  socketThread(int newSocket, int env)
         image = fopen(num2, "w");
         if (image == NULL)
         {
-            printf("No se pudo abrir la imagen\n");
+            printf("Could not open image\n");
             exit(1);
         }
 
@@ -101,16 +98,13 @@ void  socketThread(int newSocket, int env)
             fclose(image);
             int tipo = 2;
             sprintf(ruta, "python3 filter.py %s %d\n", num2, tipo);
-            printf("RUTA IMAGEN %s\n", num2);
             system (ruta);
             
         }
         ite++;
         time(&end_unit);
         time_t elapsed = end_unit - begin_unit;
-        //printf("Tiempo solicitud: %ld seconds.\n", elapsed);
         acum += elapsed;
-        //printf("Tiempo acumulado: %ld seconds.\n", acum);
         int elapsed_cifras=0, acum_cifras =0, elapsed2 = elapsed, acum2 = acum, acum3= acum, temp;
         while(elapsed2>0)
         {
@@ -148,46 +142,33 @@ void  socketThread(int newSocket, int env)
 int  idHijo;
 void catch(int sig)
 {   
-    //printf("Señal: %d atrapada!\n", sig);
     int ite_cifras=0, ite2=ite4, temp=0, elapsed2, elapsed_cifras=0;
     time(&end);
     time_t elapsed = end - begin;
-    printf("Tiempo total: %ld seconds.\n", elapsed);
-    graf2 = fopen("2_2.txt", "a");
-    graf3 = fopen("2_3.txt", "a");
+    //printf("Tiempo total: %ld seconds.\n", elapsed);
+    graf2 = fopen("2_2_1.txt", "a");
+    graf3 = fopen("2_3_1.txt", "a");
     if (graf2 == NULL)
     {
-        printf("No se pudo abrir la imagen\n");
+        printf("Could not open file\n");
         exit(1);
     }
     if (graf3 == NULL)
     {
-        printf("No se pudo abrir la imagen\n");
+        printf("Could not open file\n");
         exit(1);
     }
     fputc(']', graf2);
     fputc(']', graf3);
     fclose(graf2);
     fclose(graf3);
-    graf1 = fopen("1_1.txt", "a");
+    graf1 = fopen("1_1_1.txt", "a");
 
     if (graf1 == NULL)
     {
-        printf("No se pudo abrir la imagen\n");
+        printf("Could not open file\n");
         exit(1);
     }
-    /*while(ite2>0)
-    {
-        ite2=ite2/10;
-        ite_cifras++;
-    }
-    ite_cifras = pow(10, ite_cifras-1);
-    while(ite_cifras >0){
-        temp = ite4/ite_cifras;
-        ite4%=ite_cifras;
-        ite_cifras/=10;
-        fputc(temp+48, graf1);
-    }*/
     fputc(',', graf1);
     elapsed2 = elapsed;
     while(elapsed2>0)
@@ -221,20 +202,20 @@ int main(){
   memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);
   bind(serverSocket, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
   
-  remove("2_1.txt");
-  remove("2_2.txt");
-  remove("2_3.txt");
+  remove("2_1_1.txt");
+  remove("2_2_1.txt");
+  remove("2_3_1.txt");
   
-  graf2 = fopen("2_2.txt", "a");
-  graf3 = fopen("2_3.txt", "a");
+  graf2 = fopen("2_2_1.txt", "a");
+  graf3 = fopen("2_3_1.txt", "a");
   if (graf2 == NULL)
   {
-      printf("No se pudo abrir el archivo\n");
+      printf("Could not open file\n");
       exit(1);
   }
   if (graf3 == NULL)
   {
-      printf("No se pudo abrir el archivo\n");
+      printf("Could not open file\n");
       exit(1);
   }
   fputc('[', graf2);
@@ -264,6 +245,7 @@ int main(){
                 else{
                     idHijo = childpid;
                     env ++;
+                    wait(NULL);
                 }
             }
             if (newSocket < 0) 
@@ -272,7 +254,6 @@ int main(){
                 exit(1);
             }       
     }
-
     close(childpid);
     return 0;
 }
